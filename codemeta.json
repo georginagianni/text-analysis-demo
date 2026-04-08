@@ -1,0 +1,61 @@
+{
+  "@context": "https://doi.org/10.5063/schema/codemeta-2.0",
+  "@type": "SoftwareSourceCode",
+  "name": "text-analysis-demo",
+  "version": "1.0.0",
+  "description": "A reproducible text analysis pipeline for humanities researchers. Demonstrates frequency analysis, word co-occurrence, and basic NLP on plain-text corpora.",
+  "programmingLanguage": {
+    "@type": "ComputerLanguage",
+    "name": "Python",
+    "url": "https://www.python.org"
+  },
+  "runtimePlatform": "Python 3.10",
+  "license": "https://spdx.org/licenses/MIT",
+  "codeRepository": "https://github.com/georginagianni/text-analysis-demo",
+  "dateCreated": "2026-04-08",
+  "datePublished": "2026-04-08",
+  "keywords": ["text analysis", "NLP", "humanities", "corpus", "reproducible research"],
+  "author": [
+    {
+      "@type": "Person",
+      "givenName": "Tzortzina",
+      "familyName": "Gianni",
+      "email": "t.gianni@student.vu.nl",
+      "affiliation": {
+        "@type": "University",
+        "name": "Vrije Universiteit Amsterdam"
+      }
+    }
+  ],
+  "softwareRequirements": [
+    {
+      "@type": "SoftwareApplication",
+      "name": "nltk",
+      "version": ">=3.8"
+    },
+    {
+      "@type": "SoftwareApplication",
+      "name": "pandas",
+      "version": ">=2.0"
+    },
+    {
+      "@type": "SoftwareApplication",
+      "name": "matplotlib",
+      "version": ">=3.7"
+    },
+    {
+      "@type": "SoftwareApplication",
+      "name": "wordcloud",
+      "version": ">=1.9"
+    },
+    {
+      "@type": "SoftwareApplication",
+      "name": "jupyter",
+      "version": ">=1.0"
+    }
+  ],
+  "readme": "README.md",
+  "contIntegration": "",
+  "developmentStatus": "https://www.repostatus.org/#active",
+  "operatingSystem": ["Linux", "macOS", "Windows"]
+}

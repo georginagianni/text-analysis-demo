@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Research Environment Launcher</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, -apple-system, sans-serif; font-size: 14px;
+         background: #f4f3ef; min-height: 100vh; display: flex;
+         align-items: center; justify-content: center; padding: 1rem; }
+
+  /* Trigger button on the host page */
+  #open-btn { padding: 10px 20px; background: #534AB7; color: #EEEDFE;
+              border: none; border-radius: 8px; font-size: 14px; font-weight: 500;
+              cursor: pointer; transition: background .15s; }
+  #open-btn:hover { background: #3C3489; }
+
+  /* Overlay */
+  #overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.45);
+             z-index: 1000; align-items: center; justify-content: center; padding: 1rem; }
+  #overlay.open { display: flex; }
+
+  /* Modal */
+  .modal { background: #fff; border-radius: 14px; width: 100%; max-width: 580px;
+           border: 0.5px solid #d8d6cc; overflow: hidden; }
+  .modal-header { padding: 1.1rem 1.4rem; border-bottom: 0.5px solid #e8e6df;
+                  display: flex; align-items: center; justify-content: space-between; }
+  .modal-title { font-size: 15px; font-weight: 500; display: flex; align-items: center; gap: 8px; }
+  .badge { background: #EEEDFE; color: #3C3489; font-size: 11px;
+           padding: 3px 8px; border-radius: 6px; font-weight: 500; }
+  .close-btn { background: none; border: none; font-size: 18px; cursor: pointer;
+               color: #888; line-height: 1; padding: 4px; }
+  .close-btn:hover { color: #333; }
+  .modal-body { padding: 1.25rem 1.4rem; }
+  .modal-footer { padding: .9rem 1.4rem; border-top: 0.5px solid #e8e6df;
+                  display: flex; justify-content: space-between; align-items: center; }
+
+  /* Steps */
+  .steps { display: flex; gap: 0; margin-bottom: 1rem; border-radius: 8px;
+           overflow: hidden; border: 0.5px solid #e0ded7; }
+  .step-pill { flex: 1; text-align: center; padding: 7px 4px; font-size: 11px;
+               border-right: 0.5px solid #e0ded7; background: #f4f3ef;
+               color: #999; transition: all .2s; cursor: default; }
+  .step-pill:last-child { border-right: none; }
+  .step-pill.active { background: #EEEDFE; color: #3C3489; font-weight: 500; }
+  .step-pill.done { background: #EAF3DE; color: #3B6D11; }
+
+  /* Panels */
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  .field { margin-bottom: 1rem; }
+  .field label { display: block; font-size: 12px; color: #666; margin-bottom: 5px; font-weight: 500; }
+  .input-row { display: flex; gap: 8px; }
+  input[type=text], textarea, select {
+    width: 100%; padding: 8px 10px; border: 0.5px solid #ccc;
+    border-radius: 8px; font-size: 13px; font-family: inherit;
+    background: #fff; color: #1a1a1a; outline: none; }
+  input[type=text]:focus, textarea:focus { border-color: #7F77DD; }
+  textarea { resize: vertical; min-height: 80px; font-family: 'SF Mono', monospace; font-size: 12px; }
+
+  .btn { padding: 7px 14px; border-radius: 8px; font-size: 13px; cursor: pointer;
+         border: 0.5px solid #ccc; background: #fff; color: #1a1a1a;
+         font-family: inherit; transition: background .15s; }
+  .btn:hover { background: #f0eee8; }
+  .btn-primary { background: #534AB7; color: #EEEDFE; border-color: #534AB7; }
+  .btn-primary:hover { background: #3C3489; border-color: #3C3489; }
+  .btn-primary:disabled { opacity: .5; cursor: not-allowed; }
+  .btn-sm { padding: 5px 10px; font-size: 12px; }
+  .btn-green { background: #3B6D11; color: #EAF3DE; border-color: #3B6D11; }
+  .btn-green:hover { background: #27500A; }
+
+  .progress-bar-wrap { height: 3px; background: #e0ded7; border-radius: 2px; overflow: hidden; margin: 8px 0; }
+  .progress-bar { height: 100%; background: #534AB7; border-radius: 2px; width: 0%; transition: width .4s; }
+  .status-msg { font-size: 12px; color: #666; }
+
+  .meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+  .meta-item { background: #f4f3ef; border-radius: 8px; padding: 8px 10px; border: 0.5px solid #e0ded7; }
+  .meta-item .k { font-size: 11px; color: #999; margin-bottom: 2px; }
+  .meta-item .v { font-size: 13px; font-weight: 500; }
+  .dep-list { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+  .dep { background: #E1F5EE; color: #085041; font-size: 11px; padding: 2px 7px;
+         border-radius: 4px; font-family: monospace; }
+
+  .file-card { border: 0.5px solid #e0ded7; border-radius: 8px; margin-bottom: 8px; overflow: hidden; }
+  .file-card-head { padding: 7px 12px; background: #f4f3ef; display: flex;
+                    align-items: center; justify-content: space-between;
+                    font-size: 12px; font-weight: 500; }
+  .file-card-body { padding: 10px 12px; font-family: 'SF Mono', monospace;
+                    font-size: 11px; line-height: 1.7; white-space: pre-wrap;
+                    color: #1a1a1a; background: #fff; }
+  .file-badge { font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: 500; font-family: inherit; }
+  .file-badge-blue { background: #E6F1FB; color: #0C447C; }
+  .file-badge-green { background: #EAF3DE; color: #27500A; }
+
+  .step-list { list-style: none; display: flex; flex-direction: column; gap: 5px; }
+  .step-item { display: flex; align-items: center; gap: 10px; padding: 8px;
+               background: #f9f8f5; border-radius: 8px; font-size: 12px;
+               border: 0.5px solid #e8e6df; }
+  .dot { width: 18px; height: 18px; border-radius: 50%; flex-shrink: 0;
+         display: flex; align-items: center; justify-content: center;
+         font-size: 10px; font-weight: 500; }
+  .dot-wait { background: #f0eee8; color: #bbb; border: 0.5px solid #ddd; }
+  .dot-active { background: #CECBF6; color: #3C3489; animation: pulse 1s ease-in-out infinite alternate; }
+  .dot-done { background: #C0DD97; color: #27500A; }
+  @keyframes pulse { from { opacity: .6 } to { opacity: 1 } }
+
+  .ready-banner { background: #EAF3DE; border: 0.5px solid #C0DD97; border-radius: 8px;
+                  padding: 12px; display: flex; align-items: center; gap: 12px; margin-top: 10px; }
+  .ready-title { font-size: 13px; font-weight: 500; color: #27500A; }
+  .ready-sub { font-size: 12px; color: #3B6D11; margin-top: 2px; }
+
+  .error-box { background: #FCEBEB; border: 0.5px solid #F7C1C1; border-radius: 8px;
+               padding: 10px 12px; color: #791F1F; font-size: 12px; margin-top: 8px; }
+  .info-box { background: #E6F1FB; border: 0.5px solid #B5D4F4; border-radius: 8px;
+              padding: 10px 12px; color: #0C447C; font-size: 12px; margin-top: 8px; line-height: 1.6; }
+  .binder-url { font-family: monospace; word-break: break-all; font-size: 12px;
+                background: #fff; padding: 8px 10px; border-radius: 6px;
+                border: 0.5px solid #B5D4F4; margin-top: 6px; }
+</style>
+</head>
+<body>
+
+<button id="open-btn" onclick="openLauncher()">
+  Launch research environment
+</button>
+
+<div id="overlay">
+  <div class="modal" role="dialog" aria-labelledby="modal-title">
+
+    <div class="modal-header">
+      <div class="modal-title">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <rect x="1" y="1" width="14" height="14" rx="3" fill="#EEEDFE"/>
+          <path d="M4 5.5h8M4 8h5M4 10.5h6" stroke="#534AB7" stroke-width="1.2" stroke-linecap="round"/>
+        </svg>
+        Research environment launcher
+        <span class="badge">CodeMeta</span>
+      </div>
+      <button class="close-btn" onclick="closeLauncher()">&#x2715;</button>
+    </div>
+
+    <div class="modal-body">
+      <!-- Step pills -->
+      <div class="steps">
+        <div class="step-pill active" id="pill-0">1. Source</div>
+        <div class="step-pill" id="pill-1">2. Metadata</div>
+        <div class="step-pill" id="pill-2">3. Files</div>
+        <div class="step-pill" id="pill-3">4. Launch</div>
+      </div>
+
+      <!-- Panel 0: Input -->
+      <div class="panel active" id="panel-0">
+        <div class="field">
+          <label>GitHub repository URL</label>
+          <div class="input-row">
+            <input type="text" id="repo-input" placeholder="https://github.com/owner/repo"/>
+            <button class="btn btn-primary btn-sm" onclick="startPipeline()">Go</button>
+          </div>
+        </div>
+        <div id="p0-status" style="display:none">
+          <div class="progress-bar-wrap"><div class="progress-bar" id="p0-bar"></div></div>
+          <div class="status-msg" id="p0-msg">Fetching codemeta.json…</div>
+        </div>
+        <div id="p0-error" class="error-box" style="display:none"></div>
+        <div style="margin-top:10px">
+          <div style="font-size:11px;color:#999;margin-bottom:6px">Try with this demo repo:</div>
+          <input type="text" id="demo-url-display" value="https://github.com/your-username/text-analysis-demo" readonly style="font-size:11px;color:#666;background:#f4f3ef;cursor:default"/>
+          <div style="font-size:11px;color:#aaa;margin-top:4px">Push the files from this download to that repo first.</div>
+        </div>
+      </div>
+
+      <!-- Panel 1: Parsed metadata -->
+      <div class="panel" id="panel-1">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <div style="font-size:13px;font-weight:500" id="meta-name">—</div>
+          <button class="btn btn-sm" onclick="goToPanel(0)" style="font-size:11px">&#8592; Back</button>
+        </div>
+        <div class="meta-grid" id="meta-grid"></div>
+        <div style="font-size:12px;color:#999;margin-bottom:4px;margin-top:4px">Dependencies detected</div>
+        <div class="dep-list" id="dep-list"></div>
+        <div class="info-box" id="meta-desc" style="margin-top:10px"></div>
+      </div>
+
+      <!-- Panel 2: Generated files -->
+      <div class="panel" id="panel-2">
+        <div style="font-size:13px;font-weight:500;margin-bottom:10px">Generated environment files</div>
+        <div class="file-card">
+          <div class="file-card-head">
+            runtime.txt
+            <span class="file-badge file-badge-blue">Binder reads this</span>
+          </div>
+          <div class="file-card-body" id="runtime-preview">—</div>
+        </div>
+        <div class="file-card">
+          <div class="file-card-head">
+            requirements.txt
+            <span class="file-badge file-badge-green">pip installs these</span>
+          </div>
+          <div class="file-card-body" id="reqs-preview">—</div>
+        </div>
+        <div class="info-box">
+          Commit these two files to the root of your repository alongside <code>codemeta.json</code>. Binder detects them automatically.
+        </div>
+      </div>
+
+      <!-- Panel 3: Provision + launch -->
+      <div class="panel" id="panel-3">
+        <ul class="step-list" id="prov-steps"></ul>
+        <div id="ready-section" style="display:none">
+          <div class="ready-banner">
+            <div>
+              <div class="ready-title">Environment ready</div>
+              <div class="ready-sub">Click below to open your Jupyter workspace.</div>
+            </div>
+          </div>
+          <div style="margin-top:10px">
+            <div style="font-size:11px;color:#999;margin-bottom:4px">Binder launch URL</div>
+            <div class="binder-url" id="binder-url-display">—</div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /modal-body -->
+
+    <div class="modal-footer">
+      <div style="font-size:12px;color:#aaa" id="footer-hint">Enter a GitHub repo URL to begin</div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-sm" id="btn-next" onclick="nextStep()" style="display:none">Continue</button>
+        <button class="btn btn-green btn-sm" id="btn-launch" style="display:none" onclick="launchBinder()">
+          Open in Binder
+        </button>
+      </div>
+    </div>
+
+  </div><!-- /modal -->
+</div><!-- /overlay -->
+
+<script>
+let currentPanel = 0;
+let parsedMeta = null;
+let binderUrl = '';
+
+function openLauncher() {
+  document.getElementById('overlay').classList.add('open');
+}
+function closeLauncher() {
+  document.getElementById('overlay').classList.remove('open');
+}
+// Close on backdrop click
+document.getElementById('overlay').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closeLauncher();
+});
+
+function goToPanel(n) {
+  document.getElementById('panel-' + currentPanel).classList.remove('active');
+  document.getElementById('pill-' + currentPanel).classList.remove('active');
+  if (n > currentPanel) document.getElementById('pill-' + currentPanel).classList.add('done');
+  currentPanel = n;
+  document.getElementById('panel-' + n).classList.add('active');
+  document.getElementById('pill-' + n).classList.add('active');
+  document.getElementById('btn-next').style.display = 'none';
+  document.getElementById('btn-launch').style.display = 'none';
+}
+
+/* ── Pipeline entry ── */
+async function startPipeline() {
+  const url = document.getElementById('repo-input').value.trim();
+  if (!url) return;
+  const parts = parseGitHubUrl(url);
+  if (!parts) { showP0Error('Please enter a valid GitHub URL (https://github.com/owner/repo)'); return; }
+
+  document.getElementById('p0-error').style.display = 'none';
+  document.getElementById('p0-status').style.display = 'block';
+
+  const rawBase = `https://raw.githubusercontent.com/${parts.owner}/${parts.repo}`;
+  let meta = null;
+
+  setP0(15, 'Fetching codemeta.json…');
+  for (const branch of ['main', 'master']) {
+    try {
+      const r = await fetch(`${rawBase}/${branch}/codemeta.json`);
+      if (r.ok) { meta = await r.json(); break; }
+    } catch(e) {}
+  }
+
+  if (!meta) {
+    setP0(40, 'codemeta.json not found — trying GitHub API…');
+    meta = await fallbackGitHub(parts);
+  }
+
+  if (!meta) { showP0Error('Could not find codemeta.json in this repository. Push the files from this download first.'); return; }
+
+  setP0(100, 'Done');
+  await sleep(300);
+  parsedMeta = meta;
+  renderMeta(meta, parts);
+  goToPanel(1);
+  document.getElementById('btn-next').style.display = 'inline-block';
+  document.getElementById('btn-next').textContent = 'Generate files →';
+  document.getElementById('footer-hint').textContent = `Metadata loaded from ${parts.owner}/${parts.repo}`;
+}
+
+function nextStep() {
+  if (currentPanel === 1) {
+    renderFiles(parsedMeta);
+    goToPanel(2);
+    document.getElementById('btn-next').style.display = 'inline-block';
+    document.getElementById('btn-next').textContent = 'Provision →';
+    document.getElementById('footer-hint').textContent = 'Review the generated files, then provision.';
+  } else if (currentPanel === 2) {
+    goToPanel(3);
+    document.getElementById('btn-next').style.display = 'none';
+    document.getElementById('footer-hint').textContent = 'Provisioning environment…';
+    startProvisioning(parsedMeta);
+  }
+}
+
+/* ── Render metadata ── */
+function renderMeta(m, parts) {
+  document.getElementById('meta-name').textContent = m.name || parts.repo;
+  const langs = normLangs(m.programmingLanguage);
+  const fields = [
+    ['Version', m.version || '—'],
+    ['Language', langs.join(', ') || '—'],
+    ['Runtime', m.runtimePlatform || '—'],
+    ['License', m.license ? m.license.split('/').pop() : '—'],
+  ];
+  document.getElementById('meta-grid').innerHTML = fields.map(([k,v]) =>
+    `<div class="meta-item"><div class="k">${k}</div><div class="v">${v}</div></div>`
+  ).join('');
+
+  const deps = normDeps(m.softwareRequirements || []);
+  document.getElementById('dep-list').innerHTML = deps.length
+    ? deps.map(d => `<span class="dep">${d}</span>`).join('')
+    : '<span style="font-size:12px;color:#999">No explicit dependencies listed</span>';
+
+  document.getElementById('meta-desc').textContent = m.description || '';
+}
+
+/* ── Generate files ── */
+function renderFiles(m) {
+  const version = extractVersion(m.runtimePlatform || '');
+  const lang = (normLangs(m.programmingLanguage)[0] || 'Python').toLowerCase();
+  const prefix = lang === 'r' ? 'r' : lang === 'julia' ? 'julia' : 'python';
+  const runtime = `${prefix}-${version}`;
+
+  const deps = normDeps(m.softwareRequirements || []);
+  const reqs = deps.join('\n') || '# No dependencies found';
+
+  document.getElementById('runtime-preview').textContent = runtime;
+  document.getElementById('reqs-preview').textContent = reqs;
+
+  const repo = m.codeRepository || '';
+  if (repo.includes('github.com')) {
+    const p = repo.rstrip ? repo : repo.replace(/\/$/, '');
+    const parts = p.split('/');
+    binderUrl = `https://mybinder.org/v2/gh/${parts[parts.length-2]}/${parts[parts.length-1]}/HEAD`;
+  }
+}
+
+/* ── Provisioning animation ── */
+function startProvisioning(m) {
+  const lang = normLangs(m.programmingLanguage)[0] || 'Python';
+  const steps = [
+    'Reading codemeta.json metadata',
+    `Resolving ${lang} runtime image`,
+    'Writing runtime.txt',
+    'Writing requirements.txt',
+    'Installing declared packages',
+    'Configuring Jupyter kernel',
+    'Environment health check',
+    'Workspace ready',
+  ];
+  const ul = document.getElementById('prov-steps');
+  ul.innerHTML = steps.map((s, i) =>
+    `<li class="step-item" id="si-${i}"><span class="dot dot-wait" id="sd-${i}">○</span><span>${s}</span></li>`
+  ).join('');
+  document.getElementById('ready-section').style.display = 'none';
+  animateStep(0, steps.length);
+}
+
+function animateStep(i, total) {
+  if (i >= total) {
+    document.getElementById('ready-section').style.display = 'block';
+    if (binderUrl) document.getElementById('binder-url-display').textContent = binderUrl;
+    document.getElementById('btn-launch').style.display = 'inline-block';
+    document.getElementById('footer-hint').textContent = 'Environment provisioned successfully.';
+    return;
+  }
+  const dot = document.getElementById('sd-' + i);
+  dot.className = 'dot dot-active'; dot.textContent = '…';
+  setTimeout(() => {
+    dot.className = 'dot dot-done'; dot.textContent = '✓';
+    animateStep(i + 1, total);
+  }, 550 + Math.random() * 650);
+}
+
+function launchBinder() {
+  if (binderUrl) window.open(binderUrl, '_blank');
+  else alert('Set codeRepository in codemeta.json first, then push to GitHub.');
+}
+
+/* ── Helpers ── */
+function parseGitHubUrl(url) {
+  const m = url.match(/github\.com\/([^\/]+)\/([^\/\s#?]+)/);
+  if (!m) return null;
+  return { owner: m[1], repo: m[2].replace(/\.git$/, '') };
+}
+
+async function fallbackGitHub(parts) {
+  try {
+    const r = await fetch(`https://api.github.com/repos/${parts.owner}/${parts.repo}`);
+    if (!r.ok) return null;
+    const d = await r.json();
+    return {
+      name: d.name, description: d.description || '',
+      version: '1.0.0', license: d.license?.spdx_id || '—',
+      programmingLanguage: d.language ? [{ name: d.language }] : [],
+      runtimePlatform: d.language || '',
+      softwareRequirements: [],
+      codeRepository: d.html_url,
+    };
+  } catch(e) { return null; }
+}
+
+function normLangs(raw) {
+  if (!raw) return [];
+  const arr = Array.isArray(raw) ? raw : [raw];
+  return arr.map(l => typeof l === 'string' ? l : l?.name || '').filter(Boolean);
+}
+
+function normDeps(raw) {
+  return (Array.isArray(raw) ? raw : []).map(d => {
+    if (typeof d === 'string') return d;
+    const n = d.name || ''; const v = d.version || '';
+    return v ? `${n}${v}` : n;
+  }).filter(Boolean);
+}
+
+function extractVersion(s) {
+  const m = (s || '').match(/(\d+\.\d+(?:\.\d+)?)/);
+  return m ? m[1] : '3.10';
+}
+
+function setP0(pct, msg) {
+  document.getElementById('p0-bar').style.width = pct + '%';
+  document.getElementById('p0-msg').textContent = msg;
+}
+
+function showP0Error(msg) {
+  document.getElementById('p0-status').style.display = 'none';
+  const e = document.getElementById('p0-error');
+  e.textContent = msg; e.style.display = 'block';
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+</script>
+</body>
+</html>
