@@ -1,0 +1,108 @@
+---
+# Ansible playbook auto-generated from codemeta.json
+# Tool    : text-analysis-demo
+# Version : 1.0.0
+# Language: Python
+# Desc    : A reproducible text analysis pipeline for humanities researchers. Demonstrates f...
+#
+# Run with: ansible-playbook playbook.yml
+# Requirements: ansible >= 2.9, Python 3.10+ on target
+
+- name: Provision research environment for text-analysis-demo
+  hosts: localhost
+  connection: local
+  gather_facts: yes
+  become: no
+
+  vars:
+    tool_name: "text-analysis-demo"
+    tool_version: "1.0.0"
+    python_version: "3.10"
+    work_dir: "{ansible_env.HOME}/research/text_analysis_demo"
+
+  tasks:
+
+    # ── 1. Verify Python version ──────────────────────────────────────────
+    - name: Check Python version
+      ansible.builtin.command: python3 --version
+      register: py_ver
+      changed_when: false
+
+    - name: Show Python version
+      ansible.builtin.debug:
+        msg: "Found { py_ver.stdout } (required: Python 3.10+)"
+
+    # ── 2. Create working directory ───────────────────────────────────────
+    - name: Create working directory
+      ansible.builtin.file:
+        path: "{{ work_dir }}"
+        state: directory
+        mode: "0755"
+
+    # ── 3. Install pip dependencies ───────────────────────────────────────
+    - name: Install declared dependencies from codemeta.json
+      ansible.builtin.pip:
+        name:
+        - "nltk>=3.8"
+        - "pandas>=2.0"
+        - "matplotlib>=3.7"
+        - "wordcloud>=1.9"
+        state: present
+        extra_args: "--upgrade"
+      when: true
+
+    - name: Clone source repository
+      ansible.builtin.git:
+        repo: "https://github.com/georginagianni/text-analysis-demo"
+        dest: "{ansible_env.HOME}/research/text_analysis_demo/source"
+        version: HEAD
+        force: yes
+
+    # ── 4. Download datasets ──────────────────────────────────────────────
+    # No datasets declared in codemeta.json
+
+    # ── 5. Copy codemeta.json into working directory ──────────────────────
+    - name: Copy codemeta.json to working directory
+      ansible.builtin.copy:
+        src: codemeta.json
+        dest: "{{ work_dir }}/codemeta.json"
+        mode: "0644"
+
+    # ── 6. Copy auto-generated notebook ───────────────────────────────────
+    - name: Copy notebook to working directory
+      ansible.builtin.copy:
+        src: notebook.ipynb
+        dest: "{{ work_dir }}/notebook.ipynb"
+        mode: "0644"
+      ignore_errors: yes
+
+    # ── 7. Install Jupyter ────────────────────────────────────────────────
+    - name: Install Jupyter
+      ansible.builtin.pip:
+        name:
+          - "jupyter"
+          - "notebook"
+        state: present
+
+    # ── 8. Verify environment ─────────────────────────────────────────────
+    - name: Verify installed packages
+      ansible.builtin.pip:
+        name: nltk>=3.8
+        state: present
+      register: verify_result
+      ignore_errors: yes
+
+    # ── 9. Print summary ──────────────────────────────────────────────────
+    - name: Environment summary
+      ansible.builtin.debug:
+        msg:
+          - "============================================"
+          - " Environment ready: {{ tool_name }} {{ tool_version }}"
+          - " Working directory : {{ work_dir }}"
+          - " Python version    : {{ python_version }}"
+          - " Dependencies      : nltk, pandas, matplotlib, wordcloud, jupyter"
+          - "============================================"
+          - " To launch Jupyter:"
+          - "   cd {{ work_dir }}"
+          - "   jupyter notebook notebook.ipynb"
+          - "============================================"
