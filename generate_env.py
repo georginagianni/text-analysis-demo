@@ -288,7 +288,7 @@ def main():
     if repo_url and "github.com" in repo_url:
         parts = repo_url.rstrip("/").split("/")
         owner, repo = parts[-2], parts[-1]
-        binder = f"https://mybinder.org/v2/gh/{owner}/{repo}/HEAD?urlpath=notebook/notebook.ipynb"
+        binder = f"https://mybinder.org/v2/gh/{owner}/{repo}/HEAD?urlpath=tree/notebook.ipynb"
         print(f"\n  Binder URL (opens notebook directly):")
         print(f"  {binder}")
 
