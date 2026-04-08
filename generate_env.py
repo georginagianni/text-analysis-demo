@@ -35,6 +35,8 @@ def load_codemeta():
 
 
 def extract_version(platform):
+    if isinstance(platform, list):
+        platform = platform[0] if platform else ""
     m = re.search(r"(\d+\.\d+(?:\.\d+)?)", platform or "")
     return m.group(1) if m else "3.10"
 
@@ -288,7 +290,7 @@ def main():
     if repo_url and "github.com" in repo_url:
         parts = repo_url.rstrip("/").split("/")
         owner, repo = parts[-2], parts[-1]
-        binder = f"https://mybinder.org/v2/gh/{owner}/{repo}/HEAD?urlpath=tree/notebook.ipynb"
+        binder = f"https://mybinder.org/v2/gh/{owner}/{repo}/HEAD?urlpath=notebook/notebook.ipynb"
         print(f"\n  Binder URL (opens notebook directly):")
         print(f"  {binder}")
 

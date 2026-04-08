@@ -48,7 +48,10 @@ def get_lang(meta):
 
 
 def get_version(meta):
-    m = re.search(r"(\d+\.\d+(?:\.\d+)?)", meta.get("runtimePlatform", "") or "")
+    platform = meta.get("runtimePlatform", "") or ""
+    if isinstance(platform, list):
+        platform = platform[0] if platform else ""
+    m = re.search(r"(\d+\.\d+(?:\.\d+)?)", platform)
     return m.group(1) if m else "3.10"
 
 
@@ -126,7 +129,7 @@ def build_playbook(meta, deps, datasets, repo):
     lang    = get_lang(meta) or "Python"
     desc    = meta.get("description", "")
     safe    = re.sub(r"[^a-z0-9_]", "_", name.lower())
-    workdir = f"{{ansible_env.HOME}}/research/{safe}"
+    workdir = f"~/research/{safe}"
 
     # pip packages — skip runtime-only ones
     skip    = {"jupyter", "ipykernel", "notebook", "jupyterlab"}
@@ -248,7 +251,7 @@ def build_playbook(meta, deps, datasets, repo):
         msg:
           - "============================================"
           - " Environment ready: {{{{ tool_name }}}} {{{{ tool_version }}}}"
-          - " Working directory : {{{{ work_dir }}}}"
+          - " Working directory : ~/research/{safe}"
           - " Python version    : {{{{ python_version }}}}"
           - " Dependencies      : {", ".join(d["name"] for d in deps[:5])}"
           - "============================================"

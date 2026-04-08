@@ -18,7 +18,7 @@
     tool_name: "text-analysis-demo"
     tool_version: "1.0.0"
     python_version: "3.10"
-    work_dir: "{ansible_env.HOME}/research/text_analysis_demo"
+    work_dir: "~/research/text_analysis_demo"
 
   tasks:
 
@@ -54,7 +54,7 @@
     - name: Clone source repository
       ansible.builtin.git:
         repo: "https://github.com/georginagianni/text-analysis-demo"
-        dest: "{ansible_env.HOME}/research/text_analysis_demo/source"
+        dest: "~/research/text_analysis_demo/source"
         version: HEAD
         force: yes
 
@@ -98,7 +98,7 @@
         msg:
           - "============================================"
           - " Environment ready: {{ tool_name }} {{ tool_version }}"
-          - " Working directory : {{ work_dir }}"
+          - " Working directory : ~/research/text_analysis_demo"
           - " Python version    : {{ python_version }}"
           - " Dependencies      : nltk, pandas, matplotlib, wordcloud, jupyter"
           - "============================================"
