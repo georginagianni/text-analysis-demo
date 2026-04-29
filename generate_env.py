@@ -65,6 +65,9 @@ def get_deps(meta):
             ver = item.get("version", "")
             if ver and not re.match(r"^[><=!]", ver):
                 ver = f"=={ver}"
+            # Strip strict == pins to avoid incompatibility with newer Python
+            if ver.startswith("=="):
+                ver = ""
             deps.append({"name": item["name"], "version": ver})
     return deps
 

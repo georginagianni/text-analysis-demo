@@ -132,11 +132,20 @@ def build_playbook(meta, deps, datasets, repo):
     workdir = f"~/research/{safe}"
 
     # pip packages — skip runtime-only ones
+    # Strip strict version pins (==x.y.z) to avoid incompatibility with newer Python versions
+    # codemeta often contains old pinned versions that fail to build on Python 3.12+
     skip    = {"jupyter", "ipykernel", "notebook", "jupyterlab"}
-    pip_pkgs = [
-        f'"{d["name"]}{d["version"]}"'
-        for d in deps if d["name"].lower() not in skip
-    ]
+    pip_pkgs = []
+    for d in deps:
+        if d["name"].lower() in skip:
+            continue
+        ver = d["version"]
+        # Keep >= and <= constraints but strip == pins — too strict for newer Python
+        if ver.startswith("=="):
+            pkg = f'"{d["name"]}"'  # drop strict pin, install latest compatible
+        else:
+            pkg = f'"{d["name"]}{ver}"'
+        pip_pkgs.append(pkg)
     pip_str = "\n        - " + "\n        - ".join(pip_pkgs) if pip_pkgs else ""
 
     # dataset download tasks
