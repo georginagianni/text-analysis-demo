@@ -1,0 +1,6 @@
+{ansible_env.HOME}
+*.command
+*.bat
+playbook.yml
+HOW_TO_LAUNCH.txt
+setup_mac.command

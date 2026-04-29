@@ -24,7 +24,10 @@ import sys
 from pathlib import Path
 
 CODEMETA = Path("codemeta.json")
-PLAYBOOK = Path("playbook.yml")
+PLAYBOOK        = Path("playbook.yml")
+LAUNCHER_MAC    = Path("launch.command")
+LAUNCHER_WIN    = Path("launch.bat")
+LAUNCHER_README = Path("HOW_TO_LAUNCH.txt")
 
 LANG_PREFIX = {"python": "python", "r": "r", "julia": "julia"}
 
@@ -272,6 +275,109 @@ def build_playbook(meta, deps, datasets, repo):
     return playbook
 
 
+
+# ── Launcher scripts ──────────────────────────────────────────────────────────
+
+def build_mac_launcher(name, workdir, safe):
+    return f'''#!/bin/bash
+# Double-click this file to launch the "{name}" research environment
+# Mac: right-click → Open (first time only)
+
+echo "================================================"
+echo " Launching research environment: {name}"
+echo "================================================"
+echo ""
+
+# Check Ansible is installed
+if ! command -v ansible-playbook &> /dev/null; then
+    echo "ERROR: Ansible is not installed."
+    echo "Install it with: pip3 install ansible"
+    echo ""
+    read -p "Press Enter to exit..."
+    exit 1
+fi
+
+# Run the playbook
+echo "Provisioning environment from codemeta.json..."
+ansible-playbook "$(dirname "$0")/playbook.yml"
+
+if [ $? -eq 0 ]; then
+    echo ""
+    echo "Environment ready! Launching Jupyter notebook..."
+    sleep 1
+    cd "$HOME/research/{safe}"
+    python3 -m notebook notebook.ipynb
+else
+    echo ""
+    echo "ERROR: Provisioning failed. Check the output above."
+    read -p "Press Enter to exit..."
+fi
+'''
+
+def build_win_launcher(name, workdir, safe):
+    return f'''@echo off
+REM Double-click this file to launch the "{name}" research environment
+
+echo ================================================
+echo  Launching research environment: {name}
+echo ================================================
+echo.
+
+REM Check Ansible is installed
+where ansible-playbook >nul 2>nul
+if %errorlevel% neq 0 (
+    echo ERROR: Ansible is not installed.
+    echo Install it with: pip3 install ansible
+    echo.
+    pause
+    exit /b 1
+)
+
+echo Provisioning environment from codemeta.json...
+ansible-playbook "%~dp0playbook.yml"
+
+if %errorlevel% equ 0 (
+    echo.
+    echo Environment ready! Launching Jupyter notebook...
+    timeout /t 1 /nobreak >nul
+    cd /d "{workdir}"
+    python3 -m notebook notebook.ipynb
+) else (
+    echo.
+    echo ERROR: Provisioning failed. Check the output above.
+    pause
+)
+'''
+
+def build_readme(name, workdir, safe):
+    return f'''HOW TO LAUNCH: {name} Research Environment
+==============================================
+
+QUICKEST WAY (no terminal needed):
+  Mac:     Double-click launch.command
+           (First time: right-click → Open to allow)
+  Windows: Double-click launch.bat
+
+MANUAL WAY (terminal):
+  1. Open Terminal
+  2. Run: ansible-playbook playbook.yml
+  3. Run: cd {workdir}
+  4. Run: python3 -m notebook notebook.ipynb
+
+REQUIREMENTS:
+  - Python 3.10 or higher
+  - Ansible: pip3 install ansible
+
+WHAT THIS DOES:
+  1. Installs all declared dependencies
+  2. Clones the source repository
+  3. Downloads any declared datasets
+  4. Opens a Jupyter notebook ready to use
+
+All steps are driven automatically from codemeta.json.
+No manual configuration required.
+'''
+
 # ── Main ──────────────────────────────────────────────────────────────────────
 
 def main():
@@ -297,18 +403,27 @@ def main():
     if repo:
         print(f"  Repository    →  {repo}")
 
+    # Generate launcher scripts
+    safe    = re.sub(r"[^a-z0-9_]", "_", name.lower())
+    workdir = f"~/research/{safe}"
+    
+    mac_script = build_mac_launcher(name, workdir, safe)
+    win_script = build_win_launcher(name, workdir, safe)
+    readme     = build_readme(name, workdir, safe)
+    
+    LAUNCHER_MAC.write_text(mac_script)
+    LAUNCHER_MAC.chmod(0o755)  # make executable
+    LAUNCHER_WIN.write_text(win_script)
+    LAUNCHER_README.write_text(readme)
+    
+    print(f"  launch.command  →  Mac double-click launcher (executable)")
+    print(f"  launch.bat      →  Windows double-click launcher")
+    print(f"  HOW_TO_LAUNCH.txt →  Instructions for researchers")
     print(f"""
-To provision the environment, run:
-    ansible-playbook playbook.yml
-
-This will:
-  1. Verify Python {get_version(meta)}
-  2. Create working directory
-  3. Install all declared dependencies
-  4. Clone the source repository
-  5. Download any declared datasets
-  6. Install Jupyter
-  7. Print a launch summary
+Researcher instructions:
+  Mac:     Double-click launch.command (right-click → Open first time)
+  Windows: Double-click launch.bat
+  Manual:  ansible-playbook playbook.yml
 """)
 
 

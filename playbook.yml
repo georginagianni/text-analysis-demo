@@ -1,24 +1,24 @@
 ---
 # Ansible playbook auto-generated from codemeta.json
-# Tool    : text-analysis-demo
-# Version : 1.0.0
+# Tool    : codemeta-server
+# Version : 0.5.1
 # Language: Python
-# Desc    : A reproducible text analysis pipeline for humanities researchers. Demonstrates f...
+# Desc    : Web API serving codemeta software metadata using codemeta and schema.org, provid...
 #
 # Run with: ansible-playbook playbook.yml
-# Requirements: ansible >= 2.9, Python 3.10+ on target
+# Requirements: ansible >= 2.9, Python 3.6+ on target
 
-- name: Provision research environment for text-analysis-demo
+- name: Provision research environment for codemeta-server
   hosts: localhost
   connection: local
   gather_facts: yes
   become: no
 
   vars:
-    tool_name: "text-analysis-demo"
-    tool_version: "1.0.0"
-    python_version: "3.10"
-    work_dir: "~/research/text_analysis_demo"
+    tool_name: "codemeta-server"
+    tool_version: "0.5.1"
+    python_version: "3.6"
+    work_dir: "~/research/codemeta_server"
 
   tasks:
 
@@ -30,7 +30,7 @@
 
     - name: Show Python version
       ansible.builtin.debug:
-        msg: "Found { py_ver.stdout } (required: Python 3.10+)"
+        msg: "Found { py_ver.stdout } (required: Python 3.6+)"
 
     # ── 2. Create working directory ───────────────────────────────────────
     - name: Create working directory
@@ -43,18 +43,18 @@
     - name: Install declared dependencies from codemeta.json
       ansible.builtin.pip:
         name:
-        - "nltk>=3.8"
-        - "pandas>=2.0"
-        - "matplotlib>=3.7"
-        - "wordcloud>=1.9"
+        - "codemetapy"
+        - "fastapi"
+        - "rdflib-endpoint"
+        - "uvicorn"
         state: present
         extra_args: "--upgrade"
       when: true
 
     - name: Clone source repository
       ansible.builtin.git:
-        repo: "https://github.com/georginagianni/text-analysis-demo"
-        dest: "~/research/text_analysis_demo/source"
+        repo: "https://github.com/proycon/codemetapy.git"
+        dest: "~/research/codemeta_server/source"
         version: HEAD
         force: yes
 
@@ -87,7 +87,7 @@
     # ── 8. Verify environment ─────────────────────────────────────────────
     - name: Verify installed packages
       ansible.builtin.pip:
-        name: nltk>=3.8
+        name: codemetapy
         state: present
       register: verify_result
       ignore_errors: yes
@@ -98,9 +98,9 @@
         msg:
           - "============================================"
           - " Environment ready: {{ tool_name }} {{ tool_version }}"
-          - " Working directory : ~/research/text_analysis_demo"
+          - " Working directory : ~/research/codemeta_server"
           - " Python version    : {{ python_version }}"
-          - " Dependencies      : nltk, pandas, matplotlib, wordcloud, jupyter"
+          - " Dependencies      : codemetapy, fastapi, rdflib-endpoint, uvicorn"
           - "============================================"
           - " To launch Jupyter:"
           - "   cd {{ work_dir }}"
