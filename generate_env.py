@@ -197,8 +197,30 @@ def build_notebook(meta, deps, datasets):
                 "\n".join(imports) + "\n\nprint('All imports successful.')"
             ))
 
-    # 3. Dataset
-    cells.append(md_cell("## 3. Dataset"))
+    # 3. Text cleaning utility (must come before corpus cell)
+    clean_code = "\n".join([
+        "import unicodedata",
+        "",
+        "def clean_text(text):",
+        "    text = unicodedata.normalize('NFKC', text)",
+        "    replacements = {",
+        "        chr(0x2018): chr(39), chr(0x2019): chr(39),",
+        "        chr(0x201c): chr(34), chr(0x201d): chr(34),",
+        "        chr(0x2013): '-', chr(0x2014): '-',",
+        "        chr(0x2026): '...', chr(0x00a0): ' ',",
+        "        chr(0x00ad): '',",
+        "    }",
+        "    for k, v in replacements.items():",
+        "        text = text.replace(k, v)",
+        "    return text",
+        "",
+        "print('clean_text() ready.')",
+    ])
+    cells.append(md_cell("## 3. Text cleaning utility\n\nRun this cell first before pasting any text. It removes curly quotes and other characters that cause errors."))
+    cells.append(code_cell(clean_code))
+
+    # 4. Dataset
+    cells.append(md_cell("## 4. Dataset"))
     if datasets:
         ds_code = "import urllib.request, os\n\ndatasets = [\n"
         for url in datasets:
@@ -229,28 +251,6 @@ def build_notebook(meta, deps, datasets):
             "\n"
             "print(f'Corpus loaded: {len(corpus.split())} words')"
         ))
-
-    # 4. Text cleaning utility
-    clean_code = "\n".join([
-        "import unicodedata",
-        "",
-        "def clean_text(text):",
-        "    text = unicodedata.normalize('NFKC', text)",
-        "    replacements = {",
-        "        chr(0x2018): chr(39), chr(0x2019): chr(39),",
-        "        chr(0x201c): chr(34), chr(0x201d): chr(34),",
-        "        chr(0x2013): '-', chr(0x2014): '-',",
-        "        chr(0x2026): '...', chr(0x00a0): ' ',",
-        "        chr(0x00ad): '',",
-        "    }",
-        "    for k, v in replacements.items():",
-        "        text = text.replace(k, v)",
-        "    return text",
-        "",
-        "print('clean_text() ready — wrap any pasted text with clean_text(your_text)')",
-    ])
-    cells.append(md_cell("## 4. Text cleaning utility\n\nUse this to clean any pasted text before analysis. Removes curly quotes, em dashes and other characters that cause errors."))
-    cells.append(code_cell(clean_code))
 
     # 5. Start exploring
     cells.append(md_cell(
