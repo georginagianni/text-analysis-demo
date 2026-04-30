@@ -219,11 +219,15 @@ def build_notebook(meta, deps, datasets):
             "Or load your own data below:"
         ))
         cells.append(code_cell(
-            "# Load your data here\n"
-            "# Example:\n"
-            "# import pandas as pd\n"
-            "# df = pd.read_csv('your_file.csv')\n"
-            "# df.head()\n"
+            "# Paste your research text between the triple quotes below\n"
+            "# Replace ONLY the placeholder text — keep the triple quotes\n"
+            "corpus = clean_text(\"\"\"\n"
+            "Paste your text here. Any paragraph from an article, paper,\n"
+            "or any source relevant to your research. At least 50 words\n"
+            "works best for meaningful results.\n"
+            "\"\"\")\n"
+            "\n"
+            "print(f'Corpus loaded: {len(corpus.split())} words')"
         ))
 
     # 4. Text cleaning utility
