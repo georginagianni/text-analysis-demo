@@ -259,7 +259,23 @@ def build_notebook(meta, deps, datasets):
         "All dependencies are installed. Add your analysis below.\n\n"
         "Tip: use `clean_text(your_text)` on any pasted text to avoid encoding errors."
     ))
-    cells.append(code_cell("# Your analysis starts here\n# Example: corpus = clean_text(your_pasted_text)\n"))
+    cells.append(code_cell("# Your analysis starts here\n"))
+
+    # 5b. Results summary (auto-generated for text analysis tools)
+    if any(d["name"].lower() in ["nltk", "wordcloud", "matplotlib"] for d in deps):
+        cells.append(md_cell("## 5b. Results summary\n\nRun this cell after your analysis to see a frequency table and save the word cloud."))
+        cells.append(code_cell(
+            "import pandas as pd\n"
+            "\n"
+            "# Top 5 most frequent words\n"
+            "freq_df = pd.DataFrame(freq.most_common(5), columns=['word', 'count'])\n"
+            "print('Top 5 words:')\n"
+            "print(freq_df.to_string())\n"
+            "\n"
+            "# Save word cloud\n"
+            "plt.savefig('wordcloud.png')\n"
+            "print('Word cloud saved as wordcloud.png')"
+        ))
 
     # 5. Metadata summary
     cells.append(md_cell("## 6. Reproducibility info"))
