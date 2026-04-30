@@ -226,16 +226,39 @@ def build_notebook(meta, deps, datasets):
             "# df.head()\n"
         ))
 
-    # 4. Start exploring
+    # 4. Text cleaning utility
+    clean_code = "\n".join([
+        "import unicodedata",
+        "",
+        "def clean_text(text):",
+        "    text = unicodedata.normalize('NFKC', text)",
+        "    replacements = {",
+        "        chr(0x2018): chr(39), chr(0x2019): chr(39),",
+        "        chr(0x201c): chr(34), chr(0x201d): chr(34),",
+        "        chr(0x2013): '-', chr(0x2014): '-',",
+        "        chr(0x2026): '...', chr(0x00a0): ' ',",
+        "        chr(0x00ad): '',",
+        "    }",
+        "    for k, v in replacements.items():",
+        "        text = text.replace(k, v)",
+        "    return text",
+        "",
+        "print('clean_text() ready — wrap any pasted text with clean_text(your_text)')",
+    ])
+    cells.append(md_cell("## 4. Text cleaning utility\n\nUse this to clean any pasted text before analysis. Removes curly quotes, em dashes and other characters that cause errors."))
+    cells.append(code_cell(clean_code))
+
+    # 5. Start exploring
     cells.append(md_cell(
-        f"## 4. Start exploring\n\n"
+        f"## 5. Start exploring\n\n"
         f"The environment for **{name}** is ready. "
-        "All dependencies are installed. Add your analysis below."
+        "All dependencies are installed. Add your analysis below.\n\n"
+        "Tip: use `clean_text(your_text)` on any pasted text to avoid encoding errors."
     ))
-    cells.append(code_cell("# Your analysis starts here\n"))
+    cells.append(code_cell("# Your analysis starts here\n# Example: corpus = clean_text(your_pasted_text)\n"))
 
     # 5. Metadata summary
-    cells.append(md_cell("## 5. Reproducibility info"))
+    cells.append(md_cell("## 6. Reproducibility info"))
     cells.append(code_cell(
         "import json\n"
         "with open('codemeta.json') as f:\n"
