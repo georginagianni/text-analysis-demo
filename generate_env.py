@@ -311,6 +311,12 @@ def build_notebook(meta, deps, datasets):
             "import matplotlib.pyplot as plt\n"
             "import pandas as pd\n"
             "\n"
+            "# Download required NLTK data\n"
+            "import nltk\n"
+            "nltk.download('stopwords', quiet=True)\n"
+            "nltk.download('punkt', quiet=True)\n"
+            "nltk.download('punkt_tab', quiet=True)\n"
+            "\n"
             "# Tokenize and filter\n"
             "stop_words = set(stopwords.words('english'))\n"
             "tokens = word_tokenize(corpus.lower())\n"
@@ -345,6 +351,50 @@ def build_notebook(meta, deps, datasets):
             "print('Top 5 words:')\n"
             "print(freq_df.to_string())\n"
             "print('Word cloud saved as wordcloud.png')"
+        ))
+    elif any(d["name"].lower() == "trafilatura" for d in deps):
+        cells.append(md_cell("## 5b. Build your corpus from URLs\n\nPaste your URLs below — one per line. Trafilatura will extract clean text from each page automatically."))
+        cells.append(code_cell(
+            "import trafilatura\n"
+            "\n"
+            "# Paste your URLs here — one per line\n"
+            "urls = [\n"
+            "    'https://en.wikipedia.org/wiki/Digital_humanities',\n"
+            "    'https://en.wikipedia.org/wiki/Computational_linguistics',\n"
+            "    # Add more URLs here...\n"
+            "]\n"
+            "\n"
+            "corpus = ''\n"
+            "for url in urls:\n"
+            "    downloaded = trafilatura.fetch_url(url)\n"
+            "    text = trafilatura.extract(downloaded) or ''\n"
+            "    corpus += text + ' '\n"
+            "    print(f'Extracted: {url[:50]} — {len(text.split())} words')\n"
+            "\n"
+            "print(f'\\nTotal corpus: {len(corpus.split())} words from {len(urls)} sources')"
+        ))
+        cells.append(md_cell("## 5c. Search your corpus for a keyword\n\nChange the keyword below to find relevant sentences across all your sources automatically."))
+        cells.append(code_cell(
+            "# Change this to your research keyword\n"
+            "keyword = 'digital humanities'\n"
+            "\n"
+            "print(f'Searching for: \"{keyword}\"\\n')\n"
+            "for url in urls:\n"
+            "    downloaded = trafilatura.fetch_url(url)\n"
+            "    text = trafilatura.extract(downloaded) or ''\n"
+            "    sentences = [s.strip() for s in text.split('.') if keyword.lower() in s.lower()]\n"
+            "    if sentences:\n"
+            "        print(f'From {url[:50]}:')\n"
+            "        for s in sentences[:2]:\n"
+            "            print(f'  → {s}')\n"
+            "        print()\n"
+            "print('Search complete.')"
+        ))
+        cells.append(md_cell("## 5d. Save corpus to file\n\nSave the full extracted text for further analysis."))
+        cells.append(code_cell(
+            "with open('corpus.txt', 'w') as f:\n"
+            "    f.write(corpus)\n"
+            "print(f'Corpus saved as corpus.txt — {len(corpus.split())} words total')"
         ))
     else:
         cells.append(code_cell("# Your analysis starts here\n"))
