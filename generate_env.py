@@ -299,23 +299,55 @@ def build_notebook(meta, deps, datasets):
         "All dependencies are installed. Add your analysis below.\n\n"
         "Tip: use `clean_text(your_text)` on any pasted text to avoid encoding errors."
     ))
-    cells.append(code_cell("# Your analysis starts here\n"))
 
     # 5b. Results summary (auto-generated for text analysis tools)
     if any(d["name"].lower() in ["nltk", "wordcloud", "matplotlib"] for d in deps):
-        cells.append(md_cell("## 5b. Results summary\n\nRun this cell after your analysis to see a frequency table and save the word cloud."))
+        cells.append(md_cell("## 5b. Text analysis\n\nThis cell runs the full text analysis on your corpus and generates the word frequency chart and word cloud."))
         cells.append(code_cell(
+            "from nltk.corpus import stopwords\n"
+            "from nltk.tokenize import word_tokenize\n"
+            "from collections import Counter\n"
+            "from wordcloud import WordCloud\n"
+            "import matplotlib.pyplot as plt\n"
             "import pandas as pd\n"
             "\n"
-            "# Top 5 most frequent words\n"
+            "# Tokenize and filter\n"
+            "stop_words = set(stopwords.words('english'))\n"
+            "tokens = word_tokenize(corpus.lower())\n"
+            "words = [w for w in tokens if w.isalpha() and w not in stop_words]\n"
+            "freq = Counter(words)\n"
+            "\n"
+            "# Word frequency chart\n"
+            "top_words = freq.most_common(15)\n"
+            "df = pd.DataFrame(top_words, columns=['word', 'count'])\n"
+            "fig, ax = plt.subplots(figsize=(10, 4))\n"
+            "ax.barh(df['word'][::-1], df['count'][::-1], color='#534AB7', alpha=0.8)\n"
+            "ax.set_xlabel('Frequency')\n"
+            "ax.set_title('Top 15 words in corpus')\n"
+            "ax.spines[['top', 'right']].set_visible(False)\n"
+            "plt.tight_layout()\n"
+            "plt.show()\n"
+            "\n"
+            "# Word cloud\n"
+            "text_clean = ' '.join(words)\n"
+            "wc = WordCloud(width=800, height=400, background_color='white',\n"
+            "               colormap='viridis', max_words=80).generate(text_clean)\n"
+            "plt.figure(figsize=(12, 5))\n"
+            "plt.imshow(wc, interpolation='bilinear')\n"
+            "plt.axis('off')\n"
+            "plt.title('Word cloud')\n"
+            "plt.tight_layout()\n"
+            "plt.savefig('wordcloud.png')\n"
+            "plt.show()\n"
+            "\n"
+            "# Top 5 summary\n"
             "freq_df = pd.DataFrame(freq.most_common(5), columns=['word', 'count'])\n"
             "print('Top 5 words:')\n"
             "print(freq_df.to_string())\n"
-            "\n"
-            "# Save word cloud\n"
-            "plt.savefig('wordcloud.png')\n"
             "print('Word cloud saved as wordcloud.png')"
         ))
+    else:
+        cells.append(code_cell("# Your analysis starts here\n"))
 
     # 5. Metadata summary
     cells.append(md_cell("## 6. Reproducibility info"))
