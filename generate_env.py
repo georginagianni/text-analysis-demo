@@ -254,9 +254,16 @@ def build_notebook(meta, deps, datasets):
         cells.append(code_cell(
             "# Run this cell after uploading to load the file\n"
             "if upload.value:\n"
-            "    file_info = list(upload.value.values())[0]\n"
-            "    fname = file_info['metadata']['name']\n"
-            "    raw = file_info['content']\n"
+            "    # Compatible with both old and new ipywidgets API\n"
+            "    val = upload.value\n"
+            "    if isinstance(val, dict):\n"
+            "        file_info = list(val.values())[0]\n"
+            "        fname = file_info['metadata']['name']\n"
+            "        raw = bytes(file_info['content'])\n"
+            "    else:\n"
+            "        file_info = val[0]\n"
+            "        fname = file_info['name']\n"
+            "        raw = bytes(file_info['content'])\n"
             "    if fname.endswith('.pdf'):\n"
             "        import subprocess, sys\n"
             "        subprocess.run([sys.executable, '-m', 'pip', 'install', 'pypdf2', '-q'])\n"
@@ -272,15 +279,17 @@ def build_notebook(meta, deps, datasets):
         ))
         cells.append(code_cell(
             "# OPTION 2: Paste your text directly\n"
-            "# Replace the placeholder text between the triple quotes\n"
-            "# Skip this cell if you already uploaded a file above\n"
-            "corpus = clean_text(\"\"\"\n"
+            "# Only use this if you did NOT upload a file above\n"
+            "# If you uploaded a file, skip this cell entirely\n"
+            "if not upload.value:\n"
+            "    corpus = clean_text(\"\"\"\n"
             "Paste your text here. Any paragraph from an article, paper,\n"
             "or any source relevant to your research. At least 50 words\n"
             "works best for meaningful results.\n"
             "\"\"\")\n"
-            "\n"
-            "print(f'Corpus loaded: {len(corpus.split())} words')"
+            "    print(f'Corpus loaded: {len(corpus.split())} words')\n"
+            "else:\n"
+            "    print(f'Using uploaded file — corpus already loaded: {len(corpus.split())} words')"
         ))
 
     # 5. Start exploring
